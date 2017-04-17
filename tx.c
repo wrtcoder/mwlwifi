@@ -1205,11 +1205,14 @@ void mwl_tx_done(unsigned long data)
 
 	if (priv->is_tx_done_schedule) {
 		u32 status_mask;
+		unsigned long flags;
 
+		spin_lock_irqsave(&priv->fw_irq_lock, flags);
 		status_mask = readl(priv->iobase1 +
 				    MACREG_REG_A2H_INTERRUPT_STATUS_MASK);
 		writel(status_mask | MACREG_A2HRIC_BIT_TX_DONE,
 		       priv->iobase1 + MACREG_REG_A2H_INTERRUPT_STATUS_MASK);
+		spin_unlock_irqrestore(&priv->fw_irq_lock, flags);
 
 		tasklet_schedule(&priv->tx_task);
 		priv->is_tx_done_schedule = false;
@@ -1224,6 +1227,7 @@ void mwl_tx_flush_amsdu(unsigned long data)
 	struct mwl_sta *sta_info;
 	int i;
 	struct mwl_amsdu_frag *amsdu_frag;
+	unsigned long flags;
 
 	spin_lock(&priv->sta_lock);
 	list_for_each_entry(sta_info, &priv->sta_list, list) {
@@ -1248,10 +1252,12 @@ void mwl_tx_flush_amsdu(unsigned long data)
 	}
 	spin_unlock(&priv->sta_lock);
 
+	spin_lock_irqsave(&priv->fw_irq_lock, flags);
 	status_mask = readl(priv->iobase1 +
 			    MACREG_REG_A2H_INTERRUPT_STATUS_MASK);
 	writel(status_mask | MACREG_A2HRIC_BIT_QUE_EMPTY,
 	       priv->iobase1 + MACREG_REG_A2H_INTERRUPT_STATUS_MASK);
+	spin_unlock_irqrestore(&priv->fw_irq_lock, flags);
 
 	priv->is_qe_schedule = false;
 }

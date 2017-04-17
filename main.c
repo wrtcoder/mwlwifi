@@ -717,6 +717,7 @@ static int mwl_wl_init(struct mwl_priv *priv)
 	spin_lock_init(&priv->vif_lock);
 	spin_lock_init(&priv->sta_lock);
 	spin_lock_init(&priv->stream_lock);
+	spin_lock_init(&priv->fw_irq_lock);
 
 	rc = mwl_thermal_register(priv);
 	if (rc) {

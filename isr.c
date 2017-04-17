@@ -45,9 +45,11 @@ irqreturn_t mwl_isr(int irq, void *dev_id)
 
 		if (int_status & MACREG_A2HRIC_BIT_TX_DONE) {
 			if (!priv->is_tx_done_schedule) {
+				spin_lock(&priv->fw_irq_lock);
 				status = readl(int_status_mask);
 				writel((status & ~MACREG_A2HRIC_BIT_TX_DONE),
 				       int_status_mask);
+				spin_unlock(&priv->fw_irq_lock);
 				tasklet_schedule(&priv->tx_done_task);
 				priv->is_tx_done_schedule = true;
 			}
@@ -55,9 +57,11 @@ irqreturn_t mwl_isr(int irq, void *dev_id)
 
 		if (int_status & MACREG_A2HRIC_BIT_RX_RDY) {
 			if (!priv->is_rx_schedule) {
+				spin_lock(&priv->fw_irq_lock);
 				status = readl(int_status_mask);
 				writel((status & ~MACREG_A2HRIC_BIT_RX_RDY),
 				       int_status_mask);
+				spin_unlock(&priv->fw_irq_lock);
 				tasklet_schedule(&priv->rx_task);
 				priv->is_rx_schedule = true;
 			}
@@ -72,10 +76,12 @@ irqreturn_t mwl_isr(int irq, void *dev_id)
 			if (!priv->is_qe_schedule) {
 				if (time_after(jiffies,
 					       (priv->qe_trigger_time + 1))) {
+					spin_lock(&priv->fw_irq_lock);
 					status = readl(int_status_mask);
 					writel((status &
 					       ~MACREG_A2HRIC_BIT_QUE_EMPTY),
 					       int_status_mask);
+					spin_unlock(&priv->fw_irq_lock);
 					tasklet_schedule(&priv->qe_task);
 					priv->qe_trigger_num++;
 					priv->is_qe_schedule = true;

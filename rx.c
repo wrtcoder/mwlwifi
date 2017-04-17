@@ -400,15 +400,18 @@ void mwl_rx_recv(unsigned long data)
 	struct mwl_vif *mwl_vif = NULL;
 	struct ieee80211_hdr *wh;
 	u32 status_mask;
+	unsigned long flags;
 
 	desc = &priv->desc_data[0];
 	curr_hndl = desc->pnext_rx_hndl;
 
 	if (!curr_hndl) {
+		spin_lock_irqsave(&priv->fw_irq_lock, flags);
 		status_mask = readl(priv->iobase1 +
 				    MACREG_REG_A2H_INTERRUPT_STATUS_MASK);
 		writel(status_mask | MACREG_A2HRIC_BIT_RX_RDY,
 		       priv->iobase1 + MACREG_REG_A2H_INTERRUPT_STATUS_MASK);
+		spin_unlock_irqrestore(&priv->fw_irq_lock, flags);
 
 		priv->is_rx_schedule = false;
 		wiphy_warn(hw->wiphy, "busy or no receiving packets\n");
@@ -521,10 +524,12 @@ out:
 
 	desc->pnext_rx_hndl = curr_hndl;
 
+	spin_lock_irqsave(&priv->fw_irq_lock, flags);
 	status_mask = readl(priv->iobase1 +
 			    MACREG_REG_A2H_INTERRUPT_STATUS_MASK);
 	writel(status_mask | MACREG_A2HRIC_BIT_RX_RDY,
 	       priv->iobase1 + MACREG_REG_A2H_INTERRUPT_STATUS_MASK);
+	spin_unlock_irqrestore(&priv->fw_irq_lock, flags);
 
 	priv->is_rx_schedule = false;
 }

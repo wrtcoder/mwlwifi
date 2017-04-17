@@ -406,6 +406,8 @@ struct mwl_priv {
 	} ____cacheline_aligned_in_smp;
 	struct work_struct watchdog_ba_handle;
 
+	spinlock_t fw_irq_lock ____cacheline_aligned_in_smp;
+
 	bool csa_active;
 	struct work_struct chnl_switch_handle;
 	enum nl80211_dfs_regions dfs_region;
